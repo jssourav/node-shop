@@ -1,6 +1,6 @@
 const Product = require("../models/product");
 const { validationResult } = require('express-validator');
-const { default: mongoose } = require("mongoose");
+
 
 exports.getAddProducts = (req, res, next) => {
     res.render('admin/edit-product', {
@@ -16,9 +16,20 @@ exports.getAddProducts = (req, res, next) => {
 
 exports.postAddProduct = (req, res, next) => {
     const title = req.body.title;
-    const imageUrl = req.body.imageUrl;
+    const image = req.file;
     const price = req.body.price;
     const description = req.body.description;
+    if (!image) {
+        return res.status(422).render('admin/edit-product', {
+            path: '/admin/add-product',
+            pageTitle: 'Add Products',
+            editing: false,
+            hasError: true,
+            errorMessage: 'Attached file is not an image!',
+            product: { title: title, price: price, description: description },
+            validationErrors: []
+        });
+    }
     const errors = validationResult(req);
     if (!errors.isEmpty()) {
         return res.status(422).render('admin/edit-product', {
@@ -27,10 +38,13 @@ exports.postAddProduct = (req, res, next) => {
             editing: false,
             hasError: true,
             errorMessage: errors.array()[0].msg,
-            product: { title: title, imageUrl: imageUrl, price: price, description: description },
+            product: { title: title, price: price, description: description },
             validationErrors: errors.array()
         });
     }
+
+    const imageUrl = image.path;
+
     const product = new Product({
         title: title,
         price: price,
@@ -43,6 +57,7 @@ exports.postAddProduct = (req, res, next) => {
             console.log('Created product');
             res.redirect('/admin/products');
         }).catch(err => {
+            console.log(err);
             // res.redirect('/500');
             const error = new Error(err);
             error.httpStatusCode = 500;
@@ -77,12 +92,11 @@ exports.getEditProduct = (req, res, next) => {
 }
 
 exports.postEditProduct = (req, res, next) => {
-    console.log(req.body);
     const prodId = req.body.productId;
     const updatedTitle = req.body.title;
     const updatedPrice = req.body.price;
-    const updatedImageUrl = req.body.imageUrl;
     const updatedDescription = req.body.description;
+    const image = req.file;
 
     const errors = validationResult(req);
     if (!errors.isEmpty()) {
@@ -92,7 +106,7 @@ exports.postEditProduct = (req, res, next) => {
             editing: true,
             hasError: true,
             errorMessage: errors.array()[0].msg,
-            product: { title: updatedTitle, imageUrl: updatedImageUrl, price: updatedPrice, description: updatedDescription, _id: prodId },
+            product: { title: updatedTitle, price: updatedPrice, description: updatedDescription, _id: prodId },
             validationErrors: errors.array()
         });
     }
@@ -103,7 +117,9 @@ exports.postEditProduct = (req, res, next) => {
         }
         product.title = updatedTitle;
         product.price = updatedPrice;
-        product.imageUrl = updatedImageUrl;
+        if (image) {
+            product.imageUrl = image.path;
+        }
         product.description = updatedDescription;
         return product.save().then(result => {
             console.log('UPDATED PRODUCT!');

@@ -7,10 +7,11 @@ const session = require('express-session');
 const MongoDbStore = require('connect-mongodb-session')(session);
 const csrf = require('csurf');
 const flash = require('connect-flash');
+const multer = require('multer');
 
 const errorController = require('./controllers/error');
 
-const MONGODB_URI = 'mongodb+srv://root:root@sourav0.njrcg.mongodb.net/shop-auth?authSource=admin&replicaSet=atlas-txtz31-shard-0&w=majority&readPreference=primary&appname=MongoDB%20Compass&retryWrites=true&ssl=true';
+const MONGODB_URI = 'mongodb+srv://root:root@sourav0.njrcg.mongodb.net/shop-2?authSource=admin&replicaSet=atlas-txtz31-shard-0&w=majority&readPreference=primary&appname=MongoDB%20Compass&retryWrites=true&ssl=true';
 
 const app = express();
 const store = new MongoDbStore({
@@ -19,6 +20,27 @@ const store = new MongoDbStore({
 });
 
 const csrfProtection = csrf();
+
+const fileStorage = multer.diskStorage({
+    destination: 'images',
+    filename: (req, file, cb) => {
+        cb(null, new Date().toISOString().replace(/:/g, '-') + '-' + file.originalname);
+    },
+});
+
+
+const fileFilter = (req, file, cb) => {
+    if (
+        file.mimetype === 'image/png' ||
+        file.mimetype === 'image/jpg' ||
+        file.mimetype === 'image/jpeg'
+    ) {
+        cb(null, true);
+    } else {
+        cb(null, false);
+    }
+};
+
 
 app.set('view engine', 'ejs'); // for ejs engine
 app.set('views', 'views'); // no need to set if folder name is views
@@ -30,7 +52,9 @@ const authRoutes = require('./routes/auth');
 
 
 app.use(bodyParser.urlencoded({ extended: false }));
+app.use(multer({ storage: fileStorage, fileFilter: fileFilter }).single('image'));
 app.use(express.static(path.join(__dirname, 'public')));
+app.use('/images', express.static(path.join(__dirname, 'images')));
 app.use(session({
     secret: 'my string',
     resave: false,
@@ -71,14 +95,15 @@ app.use(authRoutes);
 app.get('/500', errorController.get500);
 app.use(errorController.get404);
 
-app.use((error, req, res, next) => {
-    // res.redirect('/500');
-    res.status(500).render('500', {
-        pageTitle: '500 Error',
-        path: '/500',
-        isAuthenticated: req.session.isLoggedIn
-    });
-});
+// app.use((error, req, res, next) => {
+//     return res.redirect('/500');
+//     // console.log(req.session);
+//     // res.status(500).render('500', {
+//     //     pageTitle: '500 Error',
+//     //     path: '/500',
+//     //     isAuthenticated: req.session.isLoggedIn
+//     // });
+// });
 
 mongoose.connect(MONGODB_URI)
     .then(result => {

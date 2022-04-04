@@ -24,8 +24,6 @@ router.post('/add-product',
         body('title', 'Please enter a valid Title!')
             .isLength({ min: 4 })
             .trim(),
-        body('imageUrl', 'Please enter a valid Image URL!')
-            .isURL(),
         body('price', 'Please enter a valid Price!')
             .isFloat("2"),
         body('description', 'Please enter some valid description!')
@@ -41,8 +39,6 @@ router.post('/edit-product',
         body('title', 'Please enter a valid Title!')
             .isLength({ min: 4 })
             .trim(),
-        body('imageUrl', 'Please enter a valid Image URL!')
-            .isURL(),
         body('price', 'Please enter a valid Price!')
             .isFloat("2"),
         body('description', 'Please enter some valid description!')
