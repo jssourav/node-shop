@@ -150,8 +150,24 @@ exports.getProducts = (req, res, next) => {
         });
 }
 
-exports.postDeleteProduct = (req, res, next) => {
-    const prodId = req.body.productId;
+// exports.postDeleteProduct = (req, res, next) => {
+//     const prodId = req.body.productId;
+//     Product.findById(prodId)
+//         .then(product => {
+//             if (!product) {
+//                 return next(new Error('Product not found!'));
+//             }
+//             fileHelper.deleteFile(product.imageUrl);
+//             return Product.deleteOne({ _id: prodId, userId: req.user._id })
+//         })
+//         .then(() => {
+//             console.log('Destroid PRODUCT!');
+//             res.redirect('/admin/products');
+//         }).catch(err => console.log(err));
+// }
+
+exports.deleteProduct = (req, res, next) => {
+    const prodId = req.params.productId;
     Product.findById(prodId)
         .then(product => {
             if (!product) {
@@ -162,6 +178,12 @@ exports.postDeleteProduct = (req, res, next) => {
         })
         .then(() => {
             console.log('Destroid PRODUCT!');
-            res.redirect('/admin/products');
-        }).catch(err => console.log(err));
+            res.status(200).json({
+                message: 'Success!'
+            });
+        }).catch(err => {
+            res.status(500).json({
+                message: 'Deleting product fail!'
+            });
+        });
 }
